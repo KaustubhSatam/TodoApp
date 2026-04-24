@@ -1,31 +1,31 @@
 package com.kau.todoapp
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 
 
 class TodoViewModel : ViewModel() {
-    var text by mutableStateOf("")
-        private set
+    private var nextId = 0
+    private val _text = MutableStateFlow("")
+    val text = _text
 
-    var tasks = mutableStateListOf<String>()
-        private set
+    private val _tasks = MutableStateFlow<List<Task>>(emptyList())
+    val tasks = _tasks
 
     fun onTextChange(newText: String) {
-        text = newText
+        text.value = newText
     }
 
     fun addTask() {
-        if (text.isNotEmpty()) {
-            tasks.add(text)
-            text = ""
-        }
+        val newTask = Task(
+            id = nextId++,
+            title = _text.value
+        )
+        _tasks.value += newTask
+        _text.value = ""
     }
 
-    fun deleteTask(index: Int) {
-        tasks.removeAt(index)
+    fun deleteTask(id: Int) {
+        _tasks.value = tasks.value.filter { it.id != id }
     }
 }

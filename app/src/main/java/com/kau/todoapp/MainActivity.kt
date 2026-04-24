@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,15 +13,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,7 +45,7 @@ class MainActivity : ComponentActivity() {
                            name = "Android",
                            modifier = Modifier.padding(innerPadding)
                        )*/
-                    TodoScreen()
+                    TodoRoute(modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -46,21 +53,28 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
+fun TodoRoute(modifier: Modifier, viewModel: TodoViewModel = viewModel()) {
+    val text by viewModel.text.collectAsState()
+    val tasks by viewModel.tasks.collectAsState()
+    TodoScreen(
+        modifier,
+        text,
+        tasks,
+        viewModel::onTextChange,
+        viewModel::addTask,
+        viewModel::deleteTask
     )
 }
 
 @Composable
 fun TodoScreen(
     modifier: Modifier = Modifier,
-    viewModel: TodoViewModel = viewModel()
+    text: String,
+    tasks: List<Task>,
+    onTextChange: (String) -> Unit,
+    onAddTask: () -> Unit,
+    onDeleteTask: (Int) -> Unit
 ) {
-    val text = viewModel.text
-    val tasks = viewModel.tasks
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -70,17 +84,29 @@ fun TodoScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val keyboardController = LocalSoftwareKeyboardController.current
+
         TextField(
             value = text,
-            onValueChange = { viewModel.onTextChange(it) },
-            placeholder = { Text("Enter task") }
+            onValueChange = onTextChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Task") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    onAddTask()
+                    keyboardController?.hide()
+                }
+            )
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Button(onClick = {
-            viewModel.addTask()
-        },
+        Button(
+            onClick = onAddTask,
             enabled = text.isNotBlank()
         ) {
             Text("Add Task")
@@ -89,21 +115,34 @@ fun TodoScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (tasks.isEmpty()) {
-            Text("No tasks yet")
-        }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("No tasks yet")
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f)
+            ) {
+                items(
+                    items = tasks,
+                    key = { task -> task.id }
+                ) { task ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(task.title, modifier = Modifier.weight(1f))
 
-        LazyColumn {
-            itemsIndexed(items = tasks, key = {_,task -> task}) { index, task ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(task, modifier = Modifier.weight(1f))
-
-                    Button(onClick = { viewModel.deleteTask(index) }) {
-                        Text("Delete")
+                        Button(onClick = { onDeleteTask(task.id) }) {
+                            Text("Delete")
+                        }
                     }
                 }
             }
@@ -115,6 +154,12 @@ fun TodoScreen(
 @Composable
 fun GreetingPreview() {
     TodoAppTheme {
-        TodoScreen()
+        TodoScreen(
+            text = "",
+            tasks = listOf(Task(1, "Sample Task")),
+            onTextChange = {},
+            onAddTask = {},
+            onDeleteTask = {}
+        )
     }
 }
