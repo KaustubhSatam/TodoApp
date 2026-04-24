@@ -1,7 +1,6 @@
 package com.kau.todoapp
 
 import android.os.Bundle
-import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,10 +8,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -20,16 +19,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kau.todoapp.ui.theme.TodoAppTheme
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 
 
 class MainActivity : ComponentActivity() {
@@ -59,9 +54,12 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun TodoScreen(modifier: Modifier = Modifier) {
-    var text by remember { mutableStateOf("") }
-    val tasks = remember { mutableStateListOf<String>() }
+fun TodoScreen(
+    modifier: Modifier = Modifier,
+    viewModel: TodoViewModel = viewModel()
+) {
+    val text = viewModel.text
+    val tasks = viewModel.tasks
 
     Column(
         modifier = modifier
@@ -74,18 +72,17 @@ fun TodoScreen(modifier: Modifier = Modifier) {
 
         TextField(
             value = text,
-            onValueChange = { text = it },
+            onValueChange = { viewModel.onTextChange(it) },
             placeholder = { Text("Enter task") }
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(onClick = {
-            if (text.isNotBlank()) {
-                tasks.add(text)
-                text = ""
-            }
-        }) {
+            viewModel.addTask()
+        },
+            enabled = text.isNotBlank()
+        ) {
             Text("Add Task")
         }
 
@@ -96,16 +93,16 @@ fun TodoScreen(modifier: Modifier = Modifier) {
         }
 
         LazyColumn {
-            itemsIndexed(tasks) { index, task ->
+            itemsIndexed(items = tasks, key = {_,task -> task}) { index, task ->
                 Row(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(task, modifier = Modifier.weight(1f))
 
-                    Button(onClick = { tasks.removeAt(index) }) {
+                    Button(onClick = { viewModel.deleteTask(index) }) {
                         Text("Delete")
                     }
                 }
