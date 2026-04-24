@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +25,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,10 +35,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.kau.todoapp.ui.theme.TodoAppTheme
+import androidx.compose.runtime.setValue
 
 
 class MainActivity : ComponentActivity() {
@@ -63,6 +67,21 @@ class MainActivity : ComponentActivity() {
                             }
                             val viewModel: TodoViewModel = viewModel(parentEntry)
                             AddTaskScreen(navController = navController, viewModel = viewModel)
+                        }
+                        composable("edit/{taskId}") { backStackEntry ->
+                            val parentEntry = remember {
+                                navController.getBackStackEntry("home")
+                            }
+                            val viewModel: TodoViewModel = viewModel(parentEntry)
+
+                            val taskId =
+                                backStackEntry.arguments?.getString("taskId")?.toIntOrNull()
+
+                            EditTaskScreen(
+                                navController = navController,
+                                viewModel = viewModel,
+                                taskId = taskId
+                            )
                         }
                     }
 
@@ -155,7 +174,12 @@ fun TodoScreen(
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(task.title, modifier = Modifier.weight(1f))
+                        Text(
+                            task.title, modifier = Modifier
+                                .weight(1f)
+                                .clickable {
+                                    navController.navigate("edit/${task.id}")
+                                })
 
                         Button(onClick = { onDeleteTask(task.id) }) {
                             Text("Delete")
@@ -236,9 +260,76 @@ fun AddTaskScreen(
     }
 }
 
+@Composable
+fun EditTaskScreen(navController: NavHostController, viewModel: TodoViewModel, taskId: Int?) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val task = taskId?.let { viewModel.getTaskById(it) }
+    var text by remember { mutableStateOf(task?.title ?: "") }
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+        Text(
+            text = "Edit Task",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Input Field
+        TextField(
+            value = text,
+            onValueChange = { text = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Edit task") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    if (taskId != null) {
+                        viewModel.updateTask(taskId, text)
+                    }
+                    keyboardController?.hide()
+                    navController.popBackStack()
+                }
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Save Button
+        Button(
+            onClick = {
+                if (taskId != null) {
+                    viewModel.updateTask(taskId, text)
+                }
+                navController.popBackStack()
+            },
+            enabled = text.isNotBlank(),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Update Task")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Cancel Button
+        Button(
+            onClick = {
+                navController.popBackStack()
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Cancel")
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
+fun TodoScreenPreview() {
     TodoAppTheme {
         TodoScreen(
             navController = rememberNavController(),

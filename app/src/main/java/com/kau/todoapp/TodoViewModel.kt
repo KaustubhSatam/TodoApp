@@ -38,6 +38,10 @@ class TodoViewModel : ViewModel() {
         _tasks.value = emptyList()
     }
 
+    fun getTaskById(id: Int): Task? {
+        return _tasks.value.find { it.id == id }
+    }
+
     fun updateTask(id: Int, newTitle: String) {
         _tasks.value = _tasks.value.map {
             if (it.id == id) it.copy(title = newTitle)
