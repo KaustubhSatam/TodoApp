@@ -62,7 +62,8 @@ fun TodoRoute(modifier: Modifier, viewModel: TodoViewModel = viewModel()) {
         tasks,
         viewModel::onTextChange,
         viewModel::addTask,
-        viewModel::deleteTask
+        viewModel::deleteTask,
+        viewModel::clearAllTask
     )
 }
 
@@ -73,15 +74,25 @@ fun TodoScreen(
     tasks: List<Task>,
     onTextChange: (String) -> Unit,
     onAddTask: () -> Unit,
-    onDeleteTask: (Int) -> Unit
+    onDeleteTask: (Int) -> Unit,
+    onClearTask: () -> Unit
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("My Todos", style = MaterialTheme.typography.headlineMedium)
-
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "My Todos (${tasks.size})",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.weight(1f)
+            )
+            Button(onClick = onClearTask) { Text("Clear All") }
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         val keyboardController = LocalSoftwareKeyboardController.current
@@ -159,7 +170,8 @@ fun GreetingPreview() {
             tasks = listOf(Task(1, "Sample Task")),
             onTextChange = {},
             onAddTask = {},
-            onDeleteTask = {}
+            onDeleteTask = {},
+            onClearTask = {}
         )
     }
 }

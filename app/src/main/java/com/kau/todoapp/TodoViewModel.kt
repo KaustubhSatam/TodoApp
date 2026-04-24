@@ -28,4 +28,8 @@ class TodoViewModel : ViewModel() {
     fun deleteTask(id: Int) {
         _tasks.value = tasks.value.filter { it.id != id }
     }
+
+    fun clearAllTask() {
+        _tasks.value = emptyList()
+    }
 }
