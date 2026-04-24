@@ -48,4 +48,12 @@ class TodoViewModel : ViewModel() {
             else it
         }
     }
+
+    fun toggleTaskCompletion(id: Int) {
+        _tasks.value = _tasks.value.map {
+            if (it.id == id) {
+                it.copy(isCompleted = !it.isCompleted)
+            } else it
+        }
+    }
 }

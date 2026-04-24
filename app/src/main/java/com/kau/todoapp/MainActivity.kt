@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.kau.todoapp.ui.theme.TodoAppTheme
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.style.TextDecoration
 
 
 class MainActivity : ComponentActivity() {
@@ -103,7 +105,8 @@ fun TodoRoute(
         navController,
         tasks,
         viewModel::deleteTask,
-        viewModel::clearAllTasks
+        viewModel::clearAllTasks,
+        viewModel::toggleTaskCompletion
     )
 }
 
@@ -113,7 +116,8 @@ fun TodoScreen(
     navController: NavController,
     tasks: List<Task>,
     onDeleteTask: (Int) -> Unit,
-    onClearTask: () -> Unit
+    onClearTask: () -> Unit,
+    onToggleTaskCompletion: (Int) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -174,12 +178,23 @@ fun TodoScreen(
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Checkbox(
+                            checked = task.isCompleted,
+                            onCheckedChange = { _ -> onToggleTaskCompletion(task.id) })
                         Text(
                             task.title, modifier = Modifier
                                 .weight(1f)
                                 .clickable {
                                     navController.navigate("edit/${task.id}")
-                                })
+                                }, style = MaterialTheme.typography.bodyLarge.copy(
+                                textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
+                            ),
+                            color = if (task.isCompleted) {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
 
                         Button(onClick = { onDeleteTask(task.id) }) {
                             Text("Delete")
@@ -266,9 +281,11 @@ fun EditTaskScreen(navController: NavHostController, viewModel: TodoViewModel, t
     val task = taskId?.let { viewModel.getTaskById(it) }
     var text by remember { mutableStateOf(task?.title ?: "") }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
         Text(
             text = "Edit Task",
             style = MaterialTheme.typography.headlineMedium
@@ -335,7 +352,8 @@ fun TodoScreenPreview() {
             navController = rememberNavController(),
             tasks = listOf(Task(1, "Sample Task")),
             onDeleteTask = {},
-            onClearTask = {}
+            onClearTask = {},
+            onToggleTaskCompletion = {}
         )
     }
 }
