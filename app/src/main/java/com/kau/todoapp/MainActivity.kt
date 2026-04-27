@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -102,11 +103,15 @@ fun TodoRoute(
     val tasks by viewModel.tasks.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
 
-    val filteredTasks = if (searchQuery.isBlank()) {
-        tasks
-    } else {
-        tasks.filter {
-            it.title.contains(searchQuery, ignoreCase = true)
+    val filteredTasks by remember(tasks,searchQuery) {
+        derivedStateOf {
+            if (searchQuery.isBlank()) {
+                tasks
+            } else {
+                tasks.filter {
+                    it.title.contains(searchQuery, ignoreCase = true)
+                }
+            }
         }
     }
 
