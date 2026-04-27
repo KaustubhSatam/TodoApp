@@ -13,6 +13,18 @@ class TodoViewModel : ViewModel() {
     private val _tasks = MutableStateFlow<List<Task>>(emptyList())
     val tasks = _tasks.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery = _searchQuery.asStateFlow()
+
+
+    fun onSearchChange(query: String) {
+        _searchQuery.value = query
+    }
+
+    val filteredTasks = _tasks.value.filter {
+        it.title.contains(_searchQuery.value, ignoreCase = true)
+    }
+
     fun onTextChange(newText: String) {
         _text.value = newText
     }
@@ -27,11 +39,11 @@ class TodoViewModel : ViewModel() {
         )
 
         _tasks.value = _tasks.value + newTask
-        _text.value = ""
+        clearText()
     }
 
     fun deleteTask(id: Int) {
-        _tasks.value = tasks.value.filter { it.id != id }
+        _tasks.value = _tasks.value.filter { it.id != id }
     }
 
     fun clearAllTasks() {
@@ -55,5 +67,10 @@ class TodoViewModel : ViewModel() {
                 it.copy(isCompleted = !it.isCompleted)
             } else it
         }
+    }
+
+
+    fun clearText() {
+        _text.value = ""
     }
 }

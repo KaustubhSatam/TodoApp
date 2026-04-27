@@ -100,13 +100,25 @@ fun TodoRoute(
     viewModel: TodoViewModel = viewModel()
 ) {
     val tasks by viewModel.tasks.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
+    val filteredTasks = if (searchQuery.isBlank()) {
+        tasks
+    } else {
+        tasks.filter {
+            it.title.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
     TodoScreen(
         modifier,
         navController,
-        tasks,
+        tasks = filteredTasks,
+        searchQuery,
         viewModel::deleteTask,
         viewModel::clearAllTasks,
-        viewModel::toggleTaskCompletion
+        viewModel::toggleTaskCompletion,
+        viewModel::onSearchChange
     )
 }
 
@@ -115,9 +127,11 @@ fun TodoScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
     tasks: List<Task>,
+    searchQuery: String,
     onDeleteTask: (Int) -> Unit,
     onClearTask: () -> Unit,
-    onToggleTaskCompletion: (Int) -> Unit
+    onToggleTaskCompletion: (Int) -> Unit,
+    onSearchChange: (String) -> Unit
 ) {
     Column(
         modifier = modifier
@@ -140,12 +154,23 @@ fun TodoScreen(
                 Text("Clear All")
             }
         }
+        Spacer(modifier = Modifier.height(8.dp))
+
+         TextField(
+            value = searchQuery,
+            onValueChange = onSearchChange,
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Search tasks...") },
+            singleLine = true
+        )
+
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             onClick = {
                 navController.navigate("add") {
                     launchSingleTop = true
+                    popUpTo("home") { inclusive = false }
                 }
             }
         ) {
@@ -185,7 +210,10 @@ fun TodoScreen(
                             task.title, modifier = Modifier
                                 .weight(1f)
                                 .clickable {
-                                    navController.navigate("edit/${task.id}")
+                                    navController.navigate("edit/${task.id}") {
+                                        launchSingleTop = true
+                                        popUpTo("home") { inclusive = false }
+                                    }
                                 }, style = MaterialTheme.typography.bodyLarge.copy(
                                 textDecoration = if (task.isCompleted) TextDecoration.LineThrough else TextDecoration.None
                             ),
@@ -351,9 +379,11 @@ fun TodoScreenPreview() {
         TodoScreen(
             navController = rememberNavController(),
             tasks = listOf(Task(1, "Sample Task")),
+            searchQuery = "",
             onDeleteTask = {},
             onClearTask = {},
-            onToggleTaskCompletion = {}
+            onToggleTaskCompletion = {},
+            onSearchChange = {}
         )
     }
 }
