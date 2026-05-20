@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.asStateFlow
 
 
 class TodoViewModel : ViewModel() {
-    private var nextId = 0
     private val _text = MutableStateFlow("")
     val text = _text.asStateFlow()
 
@@ -34,11 +33,10 @@ class TodoViewModel : ViewModel() {
         if (currentText.isBlank()) return
 
         val newTask = Task(
-            id = nextId++,
             title = currentText
         )
 
-        _tasks.value = _tasks.value + newTask
+        _tasks.value += newTask
         clearText()
     }
 
